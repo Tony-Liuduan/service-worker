@@ -1,0 +1,28 @@
+{
+  "name": "service-worker",
+  "version": "0.1.0",
+  "description": "service worker study",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tony-Liuduan/service-worker.git"
+  },
+  "keywords": [
+    "service",
+    "worker"
+  ],
+  "author": "liuduan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tony-Liuduan/service-worker/issues"
+  },
+  "homepage": "https://github.com/Tony-Liuduan/service-worker#readme",
+  "dependencies": {
+    "koa": "^2.7.0",
+    "koa-static": "^5.0.0",
+    "nodemon": "^1.18.10"
+  }
+}
