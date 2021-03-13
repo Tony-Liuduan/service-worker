@@ -17,10 +17,35 @@
 
     <body>
         <h1>Lego Star Wars gallery</h1>
-
-        <section></section>
-        <script src="mock.js"></script>
+        <div id="root"></div>
         <script src="app.js"></script>
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function () {
+                    navigator.serviceWorker.register('/sw.js', {scope: '/'})
+                        .then(function (registration) {
+                            // Registration was successful
+                            // scope 默认 '/', 即: 'http://localhost:9999/'
+                            // 执行到这里时, sw 或是已经安装进入激活状态, 或是unregister后装进入安装状态
+                            // 若安装过 刷新 去缓存刷新都会保持在 active 状态
+                            // 去缓存刷新, sw 缓存失效, 重新缓存, 请求走服务端请求, 当再次刷新进入页面时, sw 缓存生效
+                            // 普通刷新, sw 缓存生效
+                            // console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                            if (registration.installing) {
+                                console.log('Service worker installing');
+                            } else if (registration.waiting) {
+                                console.log('Service worker installed');
+                            } else if (registration.active) {
+                                console.log(caches, '================================');
+                                console.log('Service worker active');
+                            }
+                        })
+                        .catch(e => {
+                            console.log(e.messag);
+                        });
+                });
+            }
+        </script>
     </body>
 
 </html>

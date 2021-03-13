@@ -14,7 +14,7 @@ h1 {
   background: url("/gallery/star-wars-logo.jpg") no-repeat center;
 }
 
-section {
+#root {
   max-width: 640px;
   margin: 0 auto;
 }
