@@ -22,9 +22,9 @@
         <script src="/pages/index/app.js"></script>
         <script>
             if ('serviceWorker' in navigator) {
-                // 监听版本变化, 一变化就刷新页面, 及时安装最新版 sw
+                // 监听 sw 文件内容变化, 一变化就刷新页面, 及时安装最新版 sw
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    alert('controllerchange');
+                    alert('controllerchange1');
                     window.location.reload();
                 })
                 window.addEventListener('load', function () {

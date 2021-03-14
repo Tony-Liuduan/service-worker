@@ -1,4 +1,4 @@
-var cacheStorageKey = 'v4';
+var cacheStorageKey = 'v2';
 var cacheList = [
     // 注册成功后要立即缓存的资源列表
     '/pages/index/index.html',
@@ -31,6 +31,8 @@ this.addEventListener('install', function (e) {
             .then(cache => {
                 return cache.addAll(cacheList);
             })
+            // self.skipWaiting方法让当前新版本的Service Worker跳过等待
+            .then(self.skipWaiting())
             .catch(e => {
                 console.log(e);
             })
@@ -56,19 +58,24 @@ this.addEventListener('activate', function (e) {
     //             }
     //         }));
     //     })
-    // );
+    // );   
 
     e.waitUntil(
-        caches.keys().then(function (cacheNames) {
-            return Promise.all(
-                cacheNames.map(function (cacheName) {
-                    console.log(cacheName)
-                    if ([cacheStorageKey].indexOf(cacheName) === -1) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
+        caches.keys()
+            .then(function (cacheNames) {
+                return Promise.all(
+                    cacheNames.map(function (cacheName) {
+                        console.log(cacheName)
+                        if ([cacheStorageKey].indexOf(cacheName) === -1) {
+                            return caches.delete(cacheName);
+                        }
+                    })
+                );
+            })
+            .then(() => {
+                // self.clients.claim方法可以让当前的Service Worker立刻掌控页面，实现页面的及时更新
+                self.clients.claim();
+            })
     );
 });
 
