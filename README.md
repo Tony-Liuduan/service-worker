@@ -11,12 +11,12 @@
 
 ## Service Worker 能做什么
 
-1. 拦截和处理网络请求, 网络代理
-2. 管理缓存中的响应, 提升用户体验
-3. 实现离线体验, 提供完整用户体验
-4. 后台同步请求, 断网情况会将请求保护, 等有网自动发送请求给服务器, sync 事件
-5. 推送通知
-(定期同步或地理围栏)
+1. 独立工作线程, 不阻塞主线程
+2. 拦截和处理网络请求, 网络代理
+3. 管理缓存中的响应, 提升用户体验
+4. 实现离线体验, 提供完整用户体验
+5. 后台同步请求, 断网情况会将请求保护, 等有网自动发送请求给服务器, sync 事件
+6. 推送通知 push
 
 ## Service Worker 使用壁垒
 
@@ -27,11 +27,20 @@
     * [ ] Safari
 2. https / localhost
 3. 无法直接访问 DOM, 需要通过 postMessage 消息触达
-4. sw 更新, 通过刷新(非强刷)不能交换给新的 sw 管理 fetch, 当(当前域名下所有页面关闭重新打开 or 清缓存强刷)才交给新的 sw.js, 在这之前新的 sw 一直等待状态
-5. 在不用时会被中止，并在下次有需要时重启, 需要持续保存并在重启后加以重用的信息，需要借助 IndexedDB
-6. 避免设置 install 事件侦听器, 减少缓存失效概率
-7. install后, 用户刷新或跳转到其他页面, 才开始监管请求, fetch 事件 **???**
+4. 异步操作, 不支持同步操作
+5. sw 更新, 通过刷新(非强刷)不能交换给新的 sw 管理 fetch, 当(当前域名下所有页面关闭重新打开 or 清缓存强刷)才交给新的 sw.js, 在这之前新的 sw 一直等待状态
+6. 在不用时会被中止，并在下次有需要时重启, 需要持续保存并在重启后加以重用的信息，需要借助 IndexedDB
+7. install后, 用户刷新或跳转到其他页面, 才开始监管请求, fetch 事件, 可使用 `self.clients.claim` 避开
 8. cdn 资源可以被 sw.caches 缓存, 但是请求会自动优先走浏览器缓存 memory cache
+
+## Event Api
+
+1. install：Service Worker 安装成功后被触发的事件，在事件处理函数中可以添加需要缓存的文件
+2. activate：当 Service Worker 安装完成后并进入激活状态，会触发 activate 事件。通过监听 activate 事件你可以做一些预处理，如对旧版本的更新、对无用缓存的清理等
+3. message：监听其他线程的postMessage消息
+4. fetch：scope下的页面发起请求时候，会触发fetch事件，可对请求做各种拦截处理
+5. push：订阅了推送服务以后，该事件用来响应系统消息，并传递服务消息(即使用户已经关闭了页面)
+6. sync：后台同步，在网络环境较差的情况下，可将网络请求交由后台同步处理（SyncManager API）
 
 ## Service Worker 生命周期
 
@@ -108,6 +117,20 @@ sequenceDiagram
 3. 此时，旧 Service Worker 仍控制着当前页面，因此新 Service Worker 将进入 waiting 状态
 4. 当(当前域名下所有页面关闭重新打开 or 清缓存强刷)(**普通刷新不管用**)，旧 Service Worker 将会被终止，新 Service Worker 将会取得控制权。
 5. 新 Service Worker 取得控制权后，将会触发其 activate 事件。
+
+
+### 更新方式
+
+* 浏览器默认的更新机制
+* 使用skipWaiting方法，强制更新
+* 使用 skipWaiting + reload页面（serviceWorker监听controllerchange）
+* 使用skipWaiting + tips，在上一步的基础上加用户提示 用户手动reload
+
+#### skipWaiting()和clients.claim()
+
+* skipWaiting：更新Server Worker时候可以跳过waiting阶段，直接激活
+* clients.claim：让激活后的Server Worker直接接管所有打开的页面(多个tab页)，多用于第一次注册Service Worker
+
 
 ### 更新成功方式 1
 
@@ -204,8 +227,13 @@ sequenceDiagram
 
 ### sw.caches 和 indexDB 区别
 
-
 ### 缓存模式
+
+* Stale While Revalidate (主要, 优先返回缓存，并发送网络请求更新本地缓存)
+* Network First (次主要)
+* Cache First
+* Network Only
+* Cache Only
 
 #### 1. 缓存优先
 
@@ -263,6 +291,15 @@ self.addEventListener('fetch', (event) => {
   )
 })
 ```
+
+
+## pwa
+
+* manifest
+* cache Api
+* serviceWorker
+* push message
+* server sync
 
 ## Service Worker 和 webWorker 区别
 
