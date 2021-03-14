@@ -1,5 +1,4 @@
-
-var cacheStorageKey = 'v11';
+var cacheStorageKey = 'v3';
 var cacheList = [
     // 注册成功后要立即缓存的资源列表
     '/index.html',
@@ -8,7 +7,8 @@ var cacheList = [
     '/gallery/star-wars-logo.jpg',
     '/gallery/bountyHunters.jpg',
     '/gallery/myLittleVader.jpg',
-    '/gallery/snowTroopers.jpg'
+    '/gallery/snowTroopers.jpg',
+    'https://mermaid-js.github.io/mermaid/img/header.png'
 ]
 console.log(this === self) // true 
 
@@ -20,7 +20,7 @@ this.addEventListener('error', function (e) {
 
 // 当浏览器解析完 SW 文件时触发 install 事件
 this.addEventListener('install', function (e) {
-    console.log('addEventListener install')
+    console.log('addEventListener install');
     // install 事件中一般会将 cacheList 中要换存的内容通过 addAll 方法，请求一遍放入 caches 中
     // 我们使用了 caches.open() 方法来创建了一个叫做 v1 的新的缓存，将会是我们的站点资源缓存的第一个版本。
     // waitUntil 确保Service Worker 不会在 waitUntil() 里面的代码执行完毕之前安装完成
@@ -41,7 +41,7 @@ this.addEventListener('install', function (e) {
 // 激活时触发 activate 事件，当安装成功完成之后， service worker 就会激活
 // 当之前版本还在运行的时候，一般被用来做些会破坏它的事情，比如摆脱旧版的缓存。在避免占满太多磁盘空间清理一些不再需要的数据的时候也是非常有用的，每个浏览器都对 service worker 可以用的缓存空间有个硬性的限制。浏览器尽力管理磁盘空间，但它可能会删除整个域的缓存。浏览器通常会删除域下面的所有的数据。
 this.addEventListener('activate', function (e) {
-    console.log('addEventListener activate')
+    console.log('addEventListener activate ~~~~~!@')
     // 传给 waitUntil() 的 promise 会阻塞其他的事件，直到它完成。所以你可以确保你的清理操作会在你的的第一次 fetch 事件之前会完成。
     // active 事件中通常做一些过期资源释放的工作，匹配到就从 caches 中删除
 
