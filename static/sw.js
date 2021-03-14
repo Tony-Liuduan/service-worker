@@ -1,9 +1,9 @@
-var cacheStorageKey = 'v3';
+var cacheStorageKey = 'v4';
 var cacheList = [
     // 注册成功后要立即缓存的资源列表
-    '/index.html',
-    '/index.css',
-    '/app.js',
+    '/pages/index/index.html',
+    '/pages/index/index.css',
+    '/pages/index/app.js',
     '/gallery/star-wars-logo.jpg',
     '/gallery/bountyHunters.jpg',
     '/gallery/myLittleVader.jpg',
