@@ -41,6 +41,25 @@
 4. fetch：scope下的页面发起请求时候，会触发fetch事件，可对请求做各种拦截处理
 5. push：订阅了推送服务以后，该事件用来响应系统消息，并传递服务消息(即使用户已经关闭了页面)
 6. sync：后台同步，在网络环境较差的情况下，可将网络请求交由后台同步处理（SyncManager API）
+7. controllerchange：当获取到一个新的 active worker 时触发
+
+## sw 全局 Api
+
+```js
+// 获取当前控制页面的活动 Service Worker
+navigator.serviceWorker.controller
+
+// 发送消息
+navigator.serviceWorker.controller.postMessage({ type: xxx })
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+self.clients.claim();
+```
 
 ## Service Worker 生命周期
 
@@ -118,7 +137,6 @@ sequenceDiagram
 4. 当(当前域名下所有页面关闭重新打开 or 清缓存强刷)(**普通刷新不管用**)，旧 Service Worker 将会被终止，新 Service Worker 将会取得控制权。
 5. 新 Service Worker 取得控制权后，将会触发其 activate 事件。
 
-
 ### 更新方式
 
 * 浏览器默认的更新机制
@@ -130,7 +148,6 @@ sequenceDiagram
 
 * skipWaiting：更新Server Worker时候可以跳过waiting阶段，直接激活
 * clients.claim：让激活后的Server Worker直接接管所有打开的页面(多个tab页)，多用于第一次注册Service Worker
-
 
 ### 更新成功方式 1
 
@@ -203,7 +220,7 @@ sequenceDiagram
 2. 清浏览器缓存后, sw 缓存失效
 3. 和 Cookie 一样，都是具有同源策略的
 
-### Api
+### Caches Api
 
 ```js
 caches.open(cacheName) => Primose<cache>
@@ -226,6 +243,8 @@ sequenceDiagram
 ```
 
 ### sw.caches 和 indexDB 区别
+
+TODO: ??
 
 ### 缓存模式
 
@@ -292,8 +311,144 @@ self.addEventListener('fetch', (event) => {
 })
 ```
 
+## Service Worker - Client 通信
 
-## pwa
+1. Broadcast Channel API
+    * 兼容性差, Chrome、Firefox 和 Opera 目前支持该功能
+    * 能够建立多对多广播通信
+    * 此 API 允许上下文之间进行通信，而无需引用
+2. MessageChannel API
+   * 它可用于在 Window 和 Service Worker 上下文之间建立一对一通信
+3. Service Worker 的 Clients 接口
+   * 它可用于向 Service Worker 的一个或多个客户端进行广播
+
+### Broadcast Channel API
+
+```js
+// 主线程
+const broadcast = new BroadcastChannel('count-channel');
+broadcast.onmessage = (event) => {
+    console.log(event.data.payload);
+    document.getElementById("counter").innerHTML = event.data.payload;
+};
+broadcast.postMessage({
+    type: 'INCREASE_COUNT_1'
+});
+
+
+// 工作线程 sw.js
+let count = 0;
+const broadcast = new BroadcastChannel('count-channel');
+broadcast.onmessage = (event) => {
+    if (event.data && event.data.type === 'INCREASE_COUNT_1') {
+        console.log(count);
+        broadcast.postMessage({ payload: ++count });
+    }
+};
+```
+
+### MessageChannel API
+
+```js
+// 主线程
+const messageChannel = new MessageChannel();
+navigator.serviceWorker.controller.postMessage(
+    { type: "INIT_PORT" },
+    [messageChannel.port2]
+);
+messageChannel.port1.onmessage = (event) => {
+    console.log(event.data.payload);
+    document.getElementById("counter").innerHTML = event.data.payload;
+};
+// Then we send our first message
+navigator.serviceWorker.controller.postMessage({
+    type: "INCREASE_COUNT",
+});
+
+// 工作线程 sw.js
+let getVersionPort;
+let count = 0;
+self.addEventListener("message", event => {
+    if (event.data && event.data.type === 'INIT_PORT') {
+        getVersionPort = event.ports[0];
+    }
+
+    if (event.data && event.data.type === 'INCREASE_COUNT') {
+        getVersionPort.postMessage({ payload: ++count });
+    }
+});
+```
+
+### client API
+
+```js
+// 主线程
+navigator.serviceWorker.onmessage = (event) => {
+    if (event.data && event.data.type === 'REPLY_COUNT_CLIENTS') {
+        console.log(event.data.payload);
+        document.getElementById("counter").innerHTML = event.data.payload;
+    }
+};
+navigator.serviceWorker.controller.postMessage(
+    { type: "INCREASE_COUNT_CLIENTS" }
+);
+
+
+// 工作线程 sw.js
+let count = 0;
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'INCREASE_COUNT_CLIENTS') {
+        // Select who we want to respond to
+        self.clients.matchAll({
+            includeUncontrolled: true,
+            type: 'window',
+        }).then((clients) => {
+            if (clients && clients.length) {
+                // Send a response - the clients
+                // array is ordered by last focused
+                clients[0].postMessage({
+                    type: 'REPLY_COUNT_CLIENTS',
+                    payload: ++count,
+                });
+            }
+        });
+    }
+});
+```
+
+### 后台同步
+
+```js
+// 主线程.js
+registration.sync.register(`send-messages`);
+
+// sw.js
+function sendMessages() {
+    return fetch('http://localhost:9999/api/test').then((response) => {
+        return response.json()
+    }).then((data) => {
+        console.log(data.errCode === 0)
+        return data.errCode === 0 ? Promise.resolve() : Promise.reject()
+    })
+}
+self.addEventListener('sync', (event) => {
+    // 拿到我们刚才发送的标识
+    if (event.tag === 'send-messages') {
+        event.waitUntil(
+            sendMessages().catch(() => {
+                // 当event.lastChance属性为true时，将会放弃尝试
+                // 在chrome浏览器中测试，online 下请求失败时, 一共会发送三次，第一次到第二次的间隔为5分钟，第二次到第三次的间隔为10分钟。
+                if (event.lastChance) {
+                    console.log('不会再次尝试请求了')
+                }
+                return Promise.reject('fail');
+            })
+        )
+    }
+});
+```
+
+## PWA
 
 * manifest
 * cache Api

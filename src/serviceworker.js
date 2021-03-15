@@ -57,12 +57,10 @@ function sendMessages() {
 }
 
 // self.addEventListener('sync', (event) => {
-//     console.log('sync', event);
 //     // 拿到我们刚才发送的标识
 //     if (event.tag === 'send-messages') {
 //         event.waitUntil(
 //             sendMessages().catch(() => {
-//                 console.log('lastChance', event.lastChance);
 //                 // 当event.lastChance属性为true时，将会放弃尝试
 //                 // 在chrome浏览器中测试，online 下请求失败时, 一共会发送三次，第一次到第二次的间隔为5分钟，第二次到第三次的间隔为10分钟。
 //                 if (event.lastChance) {

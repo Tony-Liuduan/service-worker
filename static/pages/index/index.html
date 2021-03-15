@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
     <head>
         <meta charset="UTF-8">
         <meta
@@ -17,21 +16,27 @@
 
     <body>
         <h1>Lego Star Wars gallery</h1>
+        <button id="messageChannelBtn">计数器-messageChannel</button>
+        <button id="broadcastChannelBtn">计数器-broadcastChannel</button>
+        <button id="clientApiBtn">计数器-clientApi</button>
+        <span id="counter"></span>
         <div id="root"></div>
+        <br>
         <img src="https://mermaid-js.github.io/mermaid/img/header.png">
         <script src="/pages/index/app.js"></script>
         <script>
-            if ('serviceWorker' in navigator) {
+            if ("serviceWorker" in navigator) {
                 // 当获取到一个新的 active worker 时触发
                 // https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/oncontrollerchange
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    alert('controllerchange');
-                    window.location.reload();
-                })
-                window.addEventListener('load', function () {
+                navigator.serviceWorker.addEventListener("controllerchange", () => {
+                    alert("controllerchange");
+                    // window.location.reload();
+                });
+                window.addEventListener("load", function () {
                     if (!navigator.serviceWorker.controller) {
                         try {
-                            navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                            navigator.serviceWorker
+                                .register("/sw.js", { scope: "/" })
                                 .then(function (registration) {
                                     // Registration was successful
                                     // scope 默认 '/', 即: 'http://localhost:9999/'
@@ -39,26 +44,79 @@
                                     // 若安装过 刷新 去缓存刷新都会保持在 active 状态
                                     // 去缓存刷新, sw 缓存失效, 重新缓存, 请求走服务端请求, 当再次刷新进入页面时, sw 缓存生效
                                     // 普通刷新, sw 缓存生效
-                                    console.log('ServiceWorker registration successful with scope: ', registration);
+                                    // console.log('ServiceWorker registration successful with scope: ', registration);
                                     if (registration.installing) {
-                                        console.log('Service worker installing');
+                                        console.log("Service worker installing");
                                     } else if (registration.waiting) {
-                                        console.log('Service worker installed');
+                                        console.log("Service worker installed");
                                     } else if (registration.active) {
-                                        console.log(caches, '================================');
-                                        console.log('Service worker active');
+                                        console.log("Service worker active");
                                     }
                                 })
-                                .catch(e => {
+                                .catch((e) => {
                                     console.log(e.messag);
                                 });
                         } catch (err) {
-                            throw Error(err)
+                            throw Error(err);
                         }
                     }
+                });
+
+                navigator.serviceWorker.ready.then((registration) => {
+                    // At this point, a Service Worker is controlling the current page
+
+                    /* -------------------- 通信演示 -------------------- */
+
+                    // 1. use messageChannel 通信
+                    document.getElementById("messageChannelBtn").addEventListener("click", () => {
+                        if (!navigator.serviceWorker.controller) {
+                            return;
+                        }
+                        const messageChannel = new MessageChannel();
+                        navigator.serviceWorker.controller.postMessage(
+                            { type: "INIT_PORT" },
+                            [messageChannel.port2]
+                        );
+                        messageChannel.port1.onmessage = (event) => {
+                            console.log(event.data.payload);
+                            document.getElementById("counter").innerHTML = event.data.payload;
+                        };
+                        // Then we send our first message
+                        navigator.serviceWorker.controller.postMessage({
+                            type: "INCREASE_COUNT",
+                        });
+                    });
+
+                    // 2. user BroadcastChannel 通信
+                    document.getElementById("broadcastChannelBtn").addEventListener("click", () => {
+                        const broadcast = new BroadcastChannel('count-channel');
+                        broadcast.onmessage = (event) => {
+                            console.log(event.data.payload);
+                            document.getElementById("counter").innerHTML = event.data.payload;
+                        };
+                        broadcast.postMessage({
+                            type: 'INCREASE_COUNT_1'
+                        });
+                    });
+
+                    // 3. Client API 通信
+                    document.getElementById("clientApiBtn").addEventListener("click", () => {
+                        if (!navigator.serviceWorker.controller) {
+                            return;
+                        }
+                        navigator.serviceWorker.onmessage = (event) => {
+                            if (event.data && event.data.type === 'REPLY_COUNT_CLIENTS') {
+                                console.log(event.data.payload);
+                                document.getElementById("counter").innerHTML = event.data.payload;
+                            }
+                        };
+                        navigator.serviceWorker.controller.postMessage(
+                            { type: "INCREASE_COUNT_CLIENTS" }
+                        );
+                    });
+
                 });
             }
         </script>
     </body>
-
 </html>

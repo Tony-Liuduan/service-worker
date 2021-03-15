@@ -1,4 +1,4 @@
-var cacheStorageKey = 'v4';
+var cacheStorageKey = 'v5';
 var cacheList = [
     // 注册成功后要立即缓存的资源列表
     '/pages/index/index.html',
@@ -139,4 +139,53 @@ this.addEventListener('fetch', function (e) {
                 return caches.match('/gallery/myLittleVader.jpg');
             })
     );
+});
+
+
+
+
+// messageChannel
+let getVersionPort;
+let count = 0;
+self.addEventListener("message", event => {
+    if (event.data && event.data.type === 'INIT_PORT') {
+        getVersionPort = event.ports[0];
+    }
+
+    if (event.data && event.data.type === 'INCREASE_COUNT') {
+        getVersionPort.postMessage({ payload: ++count });
+    }
+});
+
+
+
+// BroadcastChannel
+const broadcast = new BroadcastChannel('count-channel');
+broadcast.onmessage = (event) => {
+    if (event.data && event.data.type === 'INCREASE_COUNT_1') {
+        console.log(count);
+        broadcast.postMessage({ payload: ++count });
+    }
+};
+
+
+
+// client Api
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'INCREASE_COUNT_CLIENTS') {
+        // Select who we want to respond to
+        self.clients.matchAll({
+            includeUncontrolled: true,
+            type: 'window',
+        }).then((clients) => {
+            if (clients && clients.length) {
+                // Send a response - the clients
+                // array is ordered by last focused
+                clients[0].postMessage({
+                    type: 'REPLY_COUNT_CLIENTS',
+                    payload: ++count,
+                });
+            }
+        });
+    }
 });
