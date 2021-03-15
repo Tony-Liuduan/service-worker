@@ -316,6 +316,12 @@ Service Worker初探
 React如何通过Webpack优雅的接入serviceWorker的成熟方案workBox && Google Analytics
 <https://juejin.cn/post/6844903845995216909>
 
+如何与 Service Worker 通信
+<https://mp.weixin.qq.com/s/qcU8DteP68bVd2WfG4ZJAQ>
+
+Web Worker 文献综述
+<https://mp.weixin.qq.com/s/MyRRIbn-UoruVD1dpvD-QQ>
+
 angular-service-worker
 <https://angular.cn/guide/service-worker-intro>
 

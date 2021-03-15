@@ -22,9 +22,10 @@
         <script src="/pages/index/app.js"></script>
         <script>
             if ('serviceWorker' in navigator) {
-                // 监听 sw 文件内容变化, 一变化就刷新页面, 及时安装最新版 sw
+                // 当获取到一个新的 active worker 时触发
+                // https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/oncontrollerchange
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    alert('controllerchange1');
+                    alert('controllerchange');
                     window.location.reload();
                 })
                 window.addEventListener('load', function () {
