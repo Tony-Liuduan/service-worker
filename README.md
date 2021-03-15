@@ -1,5 +1,7 @@
 # Service Worker
 
+> 兼容性: https://caniuse.com/?search=service%20worker
+
 * Service Worker是渐进式web应用（pwa）的核心技术。
 * 注册之后，可以独立于浏览器在后台运行
 * 控制我们的一个或者多个页面
@@ -458,7 +460,33 @@ self.addEventListener('sync', (event) => {
 
 ## Service Worker 和 webWorker 区别
 
-1. 是 worker 的一种
+1. Web Worker 规范中包括: DedicatedWorker和 SharedWorker; 规范并不包括 Service Worker
+2. DedicatedWorker 简称 Worker, 其线程只能与一个页面渲染进程(Render Process)进行绑定和通信, 不能多 Tab 共享
+3. SharedWorker 可以在多个浏览器 Tab 中访问到同一个 Worker 实例, 实现多 Tab 共享数据, 共享 webSocket 连接等
+4. safari 放弃了 SharedWorker 支持
+5. 多 Tab 共享资源的需求建议在 Service Worker 上寻找方案
+6. Worker 线程有独立的内存空间, Message Queue, Event Loop, Call Stack 等, 线程间通过 postMessage 通信
+7. sw / worker 都包含只读的 navigator/location
+8. 支持 setTimeout / setInterval 计时器, 可用于实现异步逻辑.支持 WebSocket 进行网络 I/O; 支持 IndexedDB 进行文件 I/O.
+9. 支持 XmlHttpRequest, 能独立发送网络请求与后台交互.
+10. Worker 线程没有 DOM API, 无法新建和操作 DOM; 也无法访问到主线程的 DOM Element.
+11. Worker 线程不能调用 alert() 或 confirm() 等 UI 相关的 BOM API.
+12. Worker 线程被主线程控制, 主线程可以新建和销毁 Worker.
+13. Worker 线程可以通过 self.close 自行销毁.
+  
+### worker 兼容性
+
+PC 端:
+IE10(2012/09)
+Chrome4(2010/01)
+Safari4(2009)
+Firefox3.5(2009)
+
+移动端:
+iOS5(2012)
+Android4.4(2013)
+
+![img](https://mmbiz.qpic.cn/mmbiz_png/q2ntl21QGgVwyicSicDmcQ00TayxOOFSLWrDMvAuPrOIYEgz2yQVhWdFcrfIXyXJTU0kUPAjxkTicEaqTJljMgJzw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
 
 ## 参考资料
 

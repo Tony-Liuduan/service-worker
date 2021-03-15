@@ -189,3 +189,5 @@ self.addEventListener('message', (event) => {
         });
     }
 });
+
+console.log(navigator, location);
